@@ -8,6 +8,7 @@ import (
 )
 
 type apiConfig struct {
+	// synchronized updates between goroutines
 	fileserverHits atomic.Int32
 }
 
@@ -33,8 +34,9 @@ func main() {
 	mux.Handle("/app/", http.StripPrefix("/app", cfg.middlewareMetricsInc(fileserver)))
 
 	mux.HandleFunc("GET /api/healthz", health)
-	mux.HandleFunc("GET /api/metrics", cfg.hits)
-	mux.HandleFunc("POST /api/reset", cfg.reset)
+	mux.HandleFunc("GET /admin/metrics", cfg.hits)
+	mux.HandleFunc("POST /admin/reset", cfg.reset)
+	mux.HandleFunc("POST /api/validate_chirp", handlerChirpsValidate)
 
 	server := &http.Server{
 		Addr:    ":" + port,
@@ -59,11 +61,24 @@ func health(w http.ResponseWriter, r *http.Request) {
 }
 
 func (cfg *apiConfig) hits(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(fmt.Sprintf("Hits: %d", cfg.fileserverHits.Load())))
+	w.Header().Set("Content-Type", "text/html")
+	w.Write([]byte(fmt.Sprintf(`<html>
+	<body>
+		<h1>Welcome, Chirpy Admin</h1>
+		<p>Chirpy has been visited %d times!</p>
+	</body>
+	</html>`, cfg.fileserverHits.Load())))
 }
 
 func (cfg *apiConfig) reset(w http.ResponseWriter, r *http.Request) {
 	cfg.fileserverHits.Store(0)
+}
+
+type Payload struct {
+	Body string `json:"body"`
+}
+
+type Response struct {
+	Error string `json:"error"`
+	Valid bool   `json:"valid"`
 }
