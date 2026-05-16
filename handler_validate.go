@@ -40,19 +40,22 @@ func censor(input string) string {
 	// split -> ["aakash", "is", "a", "dev"]
 	// join -> "aakash is a dev"
 
-	split := strings.Split(input, " ")
-	profaneWords := []string{"kerfuffle", "sharbert", "fornax"}
+	profaneWords := map[string]struct{}{
+		"kerfuffle": {},
+		"sharbert":  {},
+		"fornax":    {},
+	}
 
-	for i, word := range split {
+	words := strings.Split(input, " ")
+
+	for i, word := range words {
 		replacement := strings.Repeat("*", 4)
 		lowerCase := strings.ToLower(word)
 
-		for _, profaneWord := range profaneWords {
-			if lowerCase == profaneWord {
-				split[i] = replacement
-			}
+		if _, ok := profaneWords[lowerCase]; ok {
+			words[i] = replacement
 		}
 	}
 
-	return strings.Join(split, " ")
+	return strings.Join(words, " ")
 }
