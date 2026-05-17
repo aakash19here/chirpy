@@ -12,7 +12,6 @@ import (
 )
 
 const createUser = `-- name: CreateUser :one
-
 INSERT INTO users(
     id, 
     email

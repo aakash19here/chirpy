@@ -17,6 +17,7 @@ type apiConfig struct {
 	// synchronized updates between goroutines
 	fileserverHits atomic.Int32
 	dbQueries      *database.Queries
+	platform       string
 }
 
 func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
@@ -32,6 +33,16 @@ func main() {
 	const port = "8080"
 	godotenv.Load()
 	dbURL := os.Getenv("DB_URL")
+	platform := os.Getenv("PLATFORM")
+
+	if dbURL == "" {
+		log.Fatal("DB_URL must be set")
+	}
+
+	if platform == "" {
+		log.Fatal("PLATFORM must be set")
+	}
+
 	db, err := sql.Open("postgres", dbURL)
 
 	if err != nil {
@@ -45,6 +56,7 @@ func main() {
 	cfg := &apiConfig{
 		fileserverHits: atomic.Int32{},
 		dbQueries:      dbQueries,
+		platform:       platform,
 	}
 
 	fileserver := http.FileServer(http.Dir(filepathRoot))
@@ -53,8 +65,9 @@ func main() {
 
 	mux.HandleFunc("GET /api/healthz", health)
 	mux.HandleFunc("GET /admin/metrics", cfg.hits)
-	mux.HandleFunc("POST /admin/reset", cfg.reset)
+	mux.HandleFunc("POST /admin/reset", cfg.handlerReset)
 	mux.HandleFunc("POST /api/validate_chirp", handlerChirpsValidate)
+	mux.HandleFunc("POST /api/users", cfg.handlerUsersCreate)
 
 	server := &http.Server{
 		Addr:    ":" + port,
@@ -86,17 +99,4 @@ func (cfg *apiConfig) hits(w http.ResponseWriter, r *http.Request) {
 		<p>Chirpy has been visited %d times!</p>
 	</body>
 	</html>`, cfg.fileserverHits.Load())))
-}
-
-func (cfg *apiConfig) reset(w http.ResponseWriter, r *http.Request) {
-	cfg.fileserverHits.Store(0)
-}
-
-type Payload struct {
-	Body string `json:"body"`
-}
-
-type Response struct {
-	Error string `json:"error"`
-	Valid bool   `json:"valid"`
 }
