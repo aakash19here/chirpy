@@ -7,7 +7,6 @@ import (
 const password = "super-secret"
 
 func TestHashing(t *testing.T) {
-
 	hash, err := HashPassword(password)
 
 	if err != nil {
