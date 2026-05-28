@@ -18,6 +18,31 @@ type Chirp struct {
 	UserID    uuid.UUID `json:"user_id"`
 }
 
+func (cfg *apiConfig) getAllChirps(w http.ResponseWriter, r *http.Request) {
+	c, err := cfg.dbQueries.GetAllChirps(r.Context())
+
+	if err != nil {
+		respondWithError(w, 500, "Error fetching chrips", err)
+	}
+
+	var chrips []Chirp
+
+	for _, v := range c {
+		chirp := Chirp{
+			ID:        v.ID,
+			CreatedAt: v.CreatedAt,
+			UpdatedAt: v.UpdatedAt,
+			Body:      v.Body,
+			UserID:    v.UserID,
+		}
+
+		chrips = append(chrips, chirp)
+	}
+
+	respondWithJSON(w, 200, chrips)
+
+}
+
 func (cfg *apiConfig) handlerChirps(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Body   string    `json:"body"`
