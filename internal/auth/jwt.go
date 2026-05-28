@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"time"
 
@@ -45,4 +47,17 @@ func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 
 	return uuid.Parse(subject)
 
+}
+
+func MakeRefreshToken() string {
+	bytes := make([]byte, 32)
+
+	_, err := rand.Read(bytes)
+	if err != nil {
+		panic(err)
+	}
+
+	token := hex.EncodeToString(bytes)
+
+	return token
 }
