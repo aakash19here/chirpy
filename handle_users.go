@@ -16,7 +16,10 @@ type User struct {
 	UpdatedAt time.Time `json:"updated_at"`
 	Email     string    `json:"email"`
 	Password  string    `json:"-"`
+	Token     string    `json:"token"`
 }
+
+const DEFAULT_EXPIRES_IN = 1 * time.Hour
 
 func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
@@ -65,8 +68,9 @@ func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request)
 
 func (cfg *apiConfig) handleLogin(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
+		Email     string        `json:"email"`
+		Password  string        `json:"password"`
+		ExpiresIn time.Duration `json:"expires_in_seconds"`
 	}
 
 	var params parameters
@@ -95,11 +99,22 @@ func (cfg *apiConfig) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if params.ExpiresIn > DEFAULT_EXPIRES_IN {
+		params.ExpiresIn = DEFAULT_EXPIRES_IN
+	}
+
+	if params.ExpiresIn == 0 {
+		params.ExpiresIn = DEFAULT_EXPIRES_IN
+	}
+
+	token, err := auth.MakeJWT(user.ID, cfg.tokenSecret, params.ExpiresIn)
+
 	respondWithJSON(w, http.StatusOK, User{
 		ID:        user.ID,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
 		Email:     user.Email,
+		Token:     token,
 	})
 	return
 }
