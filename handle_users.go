@@ -39,6 +39,7 @@ func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request)
 
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "error hashing the password", err)
+		return
 	}
 
 	user, err := cfg.dbQueries.CreateUser(r.Context(), database.CreateUserParams{
@@ -59,6 +60,7 @@ func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request)
 			Email:     user.Email,
 		},
 	})
+	return
 }
 
 func (cfg *apiConfig) handleLogin(w http.ResponseWriter, r *http.Request) {
@@ -78,6 +80,7 @@ func (cfg *apiConfig) handleLogin(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		respondWithError(w, http.StatusNotFound, "user not found", err)
+		return
 	}
 
 	match, err := auth.CheckPasswordHash(params.Password, user.HashedPassword)

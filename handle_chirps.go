@@ -40,6 +40,7 @@ func (cfg *apiConfig) getAllChirps(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondWithJSON(w, 200, chrips)
+	return
 
 }
 
@@ -48,18 +49,21 @@ func (api *apiConfig) getChirp(w http.ResponseWriter, r *http.Request) {
 
 	if len(id) < 1 {
 		respondWithError(w, http.StatusBadRequest, "no chirp id passed", nil)
+		return
 	}
 
 	parsedUUID, err := uuid.Parse(id)
 
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "invalid uuid", err)
+		return
 	}
 
 	c, err := api.dbQueries.GetChirp(r.Context(), parsedUUID)
 
 	if err != nil {
 		respondWithError(w, http.StatusNotFound, "chirp not found", err)
+		return
 	}
 
 	respondWithJSON(w, http.StatusOK, Chirp{
@@ -69,6 +73,7 @@ func (api *apiConfig) getChirp(w http.ResponseWriter, r *http.Request) {
 		Body:      c.Body,
 		UserID:    c.UserID,
 	})
+	return
 }
 
 func (cfg *apiConfig) handlerChirps(w http.ResponseWriter, r *http.Request) {
